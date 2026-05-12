@@ -2,13 +2,13 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "xtheme">
 <!ENTITY author "skywolf">
-<!ENTITY version "2026.05.12.2">
+<!ENTITY version "2026.05.12.3">
 <!ENTITY md5 "74b6343289fb3de76b1b6316a0fae3b4">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" icon="paint-brush" min="7.2.0" launch="Settings/XTheme" support="https://github.com/skywolfcn/unraid-xtheme">
 <CHANGES>
-###2026.05.12.2
+###2026.05.12.3
 - Initial release of a simplified glass theme plugin for Unraid 7.2.x
 </CHANGES>
 <FILE Run="/bin/bash">
@@ -18,7 +18,7 @@ rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&ve
 </INLINE>
 </FILE>
 <FILE Name="/boot/config/plugins/&name;/packages/&name;-&version;-x86_64-1.txz" Run="upgradepkg --reinstall --install-new">
-<URL>https://github.com/skywolfcn/unraid-xtheme/raw/main/archive/xtheme-2026.05.12.2-x86_64-1.txz</URL>
+<URL>https://github.com/skywolfcn/unraid-xtheme/raw/main/archive/xtheme-2026.05.12.3-x86_64-1.txz</URL>
 <MD5>&md5;</MD5>
 </FILE>
 <FILE Run="/bin/bash">
@@ -34,6 +34,7 @@ ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 removepkg xtheme-&version;-x86_64-1 2>/dev/null
+rm -f /boot/config/plugins/xtheme.plg
 rm -rf /usr/local/emhttp/plugins/xtheme
 rm -rf /boot/config/plugins/xtheme
 ]]></INLINE>
