@@ -2,13 +2,13 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "xtheme">
 <!ENTITY author "skywolf">
-<!ENTITY version "2026.05.12">
-<!ENTITY md5 "74b6343289fb3de76b1b6316a0fae3b4">
+<!ENTITY version "2026.05.12.105">
+<!ENTITY md5 "5af998fa679736e4ba756b8910609d24">
 <!ENTITY pluginURL "file:///boot/config/plugins/xtheme/xtheme.plg">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" icon="paint-brush" min="7.2.0" launch="Settings/XTheme">
 <CHANGES>
-###2026.05.12
+###2026.05.12.105
 - Initial release of a simplified glass theme plugin for Unraid 7.2.x
 </CHANGES>
 <FILE Run="/bin/bash">
@@ -17,8 +17,8 @@ mkdir -p /boot/config/plugins/&name;/packages
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
 </INLINE>
 </FILE>
-<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
-<LOCAL>/boot/config/plugins/xtheme/packages/xtheme-2026.05.12-x86_64-1.txz</LOCAL>
+<FILE Name="/boot/config/plugins/&name;/packages/xtheme-2026.05.12.105-x86_64-1.txz" Run="upgradepkg --reinstall --install-new">
+<LOCAL>/boot/config/plugins/xtheme/packages/xtheme-2026.05.12.105-x86_64-1.txz</LOCAL>
 <MD5>&md5;</MD5>
 </FILE>
 <FILE Run="/bin/bash">
@@ -34,6 +34,7 @@ ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 removepkg xtheme-&version;-x86_64-1 2>/dev/null
+rm -f /boot/config/plugins/xtheme.plg
 rm -rf /usr/local/emhttp/plugins/xtheme
 rm -rf /boot/config/plugins/xtheme
 ]]></INLINE>

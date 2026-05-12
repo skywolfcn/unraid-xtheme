@@ -6,6 +6,7 @@ It is designed to replace older Theme Engine based workflows with a smaller sett
 
 - background image upload or URL
 - text, accent, header, menu, and panel colors
+- RGBA color pickers with transparency
 - background blur
 - glass blur
 - overlay strength
@@ -62,21 +63,36 @@ plugin install /boot/config/plugins/xtheme/xtheme.plg
 
 ## Share with other Unraid users
 
-1. Push this repo to GitHub.
-2. Run:
-
-```powershell
-.\build.ps1 -PluginRepo skywolfcn/unraid-xtheme
-```
-
-3. Commit and push:
-   - `archive/*.txz`
-   - `xtheme.plg`
-4. Share the raw plugin URL:
+Install URL:
 
 ```text
 https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg
 ```
+
+Release workflow:
+
+1. Build the public package:
+
+```powershell
+.\build.ps1 -Version 2026.05.12.105 -PluginRepo skywolfcn/unraid-xtheme
+```
+
+2. Commit and push:
+   - `archive/xtheme-<version>-x86_64-1.txz.b64`
+   - `xtheme.plg`
+3. Users install from the raw URL above.
+4. For later updates, bump the version, rebuild, and push the new `xtheme.plg` plus matching `archive/*.txz.b64`.
+
+## Updates in Unraid
+
+Yes. If users install `XTheme` from the GitHub raw `.plg` URL, Unraid can detect later plugin updates.
+
+For updates to appear correctly:
+
+- keep the install URL the same: `https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg`
+- increase the plugin version every time
+- push the updated `xtheme.plg`
+- push the matching package file in `archive/`
 
 ## Recommended public repo
 
