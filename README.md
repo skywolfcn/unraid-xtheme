@@ -41,7 +41,7 @@ That creates:
 To generate a public installable plugin file for GitHub hosting:
 
 ```powershell
-.\build.ps1 -PluginRepo yourname/unraid-xtheme
+.\build.ps1 -PluginRepo skywolfcn/unraid-xtheme
 ```
 
 That also creates:
@@ -66,7 +66,7 @@ plugin install /boot/config/plugins/xtheme/xtheme.plg
 2. Run:
 
 ```powershell
-.\build.ps1 -PluginRepo yourname/unraid-xtheme
+.\build.ps1 -PluginRepo skywolfcn/unraid-xtheme
 ```
 
 3. Commit and push:
@@ -75,7 +75,7 @@ plugin install /boot/config/plugins/xtheme/xtheme.plg
 4. Share the raw plugin URL:
 
 ```text
-https://raw.githubusercontent.com/yourname/unraid-xtheme/main/xtheme.plg
+https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg
 ```
 
 ## Recommended public repo
