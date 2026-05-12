@@ -1,0 +1,6 @@
+Menu="Buttons:99"
+Title=""
+Icon="paint-brush"
+---
+<?php include '/usr/local/emhttp/plugins/xtheme/include/theme_hook.php'; ?>
+

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" standalone="yes"?>
+<!DOCTYPE PLUGIN [
+<!ENTITY name "xtheme">
+<!ENTITY author "skywolf">
+<!ENTITY version "2026.05.12">
+<!ENTITY md5 "74b6343289fb3de76b1b6316a0fae3b4">
+<!ENTITY pluginURL "https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg">
+]>
+<PLUGIN name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" icon="paint-brush" min="7.2.0" launch="Settings/XTheme" support="https://github.com/skywolfcn/unraid-xtheme">
+<CHANGES>
+###2026.05.12
+- Initial release of a simplified glass theme plugin for Unraid 7.2.x
+</CHANGES>
+<FILE Run="/bin/bash">
+<INLINE>
+mkdir -p /boot/config/plugins/&name;/packages
+rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
+</INLINE>
+</FILE>
+<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
+<URL>https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/archive/xtheme-2026.05.12-x86_64-1.txz</URL>
+<MD5>&md5;</MD5>
+</FILE>
+<FILE Run="/bin/bash">
+<INLINE><![CDATA[
+mkdir -p /boot/config/plugins/xtheme/backgrounds
+if [ ! -f /boot/config/plugins/xtheme/xtheme.cfg ]; then
+  cp -f /usr/local/emhttp/plugins/xtheme/default.cfg /boot/config/plugins/xtheme/xtheme.cfg
+fi
+rm -rf /usr/local/emhttp/plugins/xtheme/backgrounds
+ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme/backgrounds
+]]></INLINE>
+</FILE>
+<FILE Run="/bin/bash" Method="remove">
+<INLINE><![CDATA[
+removepkg xtheme-&version;-x86_64-1 2>/dev/null
+rm -rf /usr/local/emhttp/plugins/xtheme
+rm -rf /boot/config/plugins/xtheme
+]]></INLINE>
+</FILE>
+</PLUGIN>

@@ -1,0 +1,276 @@
+Menu="UserPreferences"
+Title="XTheme"
+Icon="paint-brush"
+---
+<?php
+require_once '/usr/local/emhttp/plugins/xtheme/include/theme_helpers.php';
+$themeConfig = xtheme_read_config();
+$jsText = [
+    'saving' => xtheme_text('status_saving'),
+    'choose_image' => xtheme_text('status_choose_image'),
+    'uploading' => xtheme_text('status_uploading'),
+    'upload_unreadable' => xtheme_text('status_upload_unreadable'),
+    'upload_failed' => xtheme_text('status_upload_failed'),
+    'uploaded' => xtheme_text('status_uploaded'),
+    'cleared' => xtheme_text('status_cleared'),
+];
+?>
+
+<style>
+  .xtheme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
+    margin-top: 14px;
+  }
+
+  .xtheme-card {
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(17, 24, 39, 0.62);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+  }
+
+  .xtheme-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.55rem;
+  }
+
+  .xtheme-card p {
+    margin: 0 0 14px;
+    opacity: 0.82;
+  }
+
+  .xtheme-card label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .xtheme-card input[type="text"],
+  .xtheme-card input[type="url"],
+  .xtheme-card input[type="number"],
+  .xtheme-card input[type="color"],
+  .xtheme-card input[type="range"],
+  .xtheme-card select {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+  }
+
+  .xtheme-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .xtheme-status {
+    margin-top: 12px;
+    min-height: 22px;
+    font-size: 1.2rem;
+  }
+
+  .xtheme-inline-value {
+    display: inline-block;
+    min-width: 40px;
+    text-align: right;
+    opacity: 0.85;
+    margin-left: 8px;
+  }
+
+  .xtheme-save {
+    margin-top: 18px;
+  }
+</style>
+
+<div id="title"><?= htmlspecialchars(xtheme_text('x_theme')) ?></div>
+<div class="xtheme-grid">
+  <div class="xtheme-card">
+    <h3><?= htmlspecialchars(xtheme_text('theme_toggle_title')) ?></h3>
+    <p><?= htmlspecialchars(xtheme_text('theme_toggle_text')) ?></p>
+
+    <form markdown="1" id="xtheme-form" method="POST" action="/update.php" target="progressFrame" onsubmit="return XThemeAfterSave();">
+      <input type="hidden" name="#file" value="xtheme/xtheme.cfg">
+      <input type="hidden" name="#section" value="XTheme">
+
+      <label for="enabled"><?= htmlspecialchars(xtheme_text('enable_theme')) ?></label>
+      <select name="enabled" id="enabled">
+        <?= mk_option($themeConfig['enabled'], '1', 'Yes') ?>
+        <?= mk_option($themeConfig['enabled'], '0', 'No') ?>
+      </select>
+
+      <label for="background_image"><?= htmlspecialchars(xtheme_text('background_image_url')) ?></label>
+      <input type="text" name="background_image" id="background_image" value="<?= htmlspecialchars($themeConfig['background_image']) ?>" placeholder="https://...">
+
+      <label for="text_color"><?= htmlspecialchars(xtheme_text('text_color')) ?></label>
+      <input type="color" name="text_color" id="text_color" value="<?= htmlspecialchars($themeConfig['text_color']) ?>">
+
+      <label for="accent_color"><?= htmlspecialchars(xtheme_text('accent_color')) ?></label>
+      <input type="color" name="accent_color" id="accent_color" value="<?= htmlspecialchars($themeConfig['accent_color']) ?>">
+
+      <label for="header_color"><?= htmlspecialchars(xtheme_text('header_color')) ?></label>
+      <input type="color" name="header_color" id="header_color" value="<?= htmlspecialchars($themeConfig['header_color']) ?>">
+
+      <label for="menu_color"><?= htmlspecialchars(xtheme_text('menu_color')) ?></label>
+      <input type="color" name="menu_color" id="menu_color" value="<?= htmlspecialchars($themeConfig['menu_color']) ?>">
+
+      <label for="panel_color"><?= htmlspecialchars(xtheme_text('panel_color')) ?></label>
+      <input type="color" name="panel_color" id="panel_color" value="<?= htmlspecialchars($themeConfig['panel_color']) ?>">
+
+      <div class="xtheme-save">
+        <input type="submit" name="#apply" value="<?= htmlspecialchars(xtheme_text('save_theme')) ?>">
+      </div>
+    </form>
+  </div>
+
+  <div class="xtheme-card">
+    <h3><?= htmlspecialchars(xtheme_text('background_title')) ?></h3>
+    <p><?= htmlspecialchars(xtheme_text('background_text')) ?></p>
+
+    <label for="background_file"><?= htmlspecialchars(xtheme_text('upload_image')) ?></label>
+    <input type="file" id="background_file" accept="image/jpeg,image/png,image/gif,image/webp">
+
+    <div class="xtheme-actions">
+      <input type="button" value="<?= htmlspecialchars(xtheme_text('upload_background')) ?>" onclick="XThemeUploadBackground();">
+      <input type="button" value="<?= htmlspecialchars(xtheme_text('clear_background')) ?>" onclick="XThemeClearBackground();">
+    </div>
+
+    <div class="xtheme-status" id="xtheme-status"></div>
+  </div>
+
+  <div class="xtheme-card">
+    <h3><?= htmlspecialchars(xtheme_text('glass_title')) ?></h3>
+    <p><?= htmlspecialchars(xtheme_text('glass_text')) ?></p>
+
+    <label for="background_blur"><?= htmlspecialchars(xtheme_text('background_blur')) ?> <span class="xtheme-inline-value" id="background_blur_value"></span></label>
+    <input type="range" form="xtheme-form" min="0" max="40" step="1" name="background_blur" id="background_blur" value="<?= htmlspecialchars($themeConfig['background_blur']) ?>">
+
+    <label for="glass_blur"><?= htmlspecialchars(xtheme_text('glass_blur')) ?> <span class="xtheme-inline-value" id="glass_blur_value"></span></label>
+    <input type="range" form="xtheme-form" min="0" max="25" step="1" name="glass_blur" id="glass_blur" value="<?= htmlspecialchars($themeConfig['glass_blur']) ?>">
+
+    <label for="overlay_opacity"><?= htmlspecialchars(xtheme_text('overlay_strength')) ?> <span class="xtheme-inline-value" id="overlay_opacity_value"></span></label>
+    <input type="range" form="xtheme-form" min="0" max="0.90" step="0.01" name="overlay_opacity" id="overlay_opacity" value="<?= htmlspecialchars($themeConfig['overlay_opacity']) ?>">
+
+    <label for="panel_opacity"><?= htmlspecialchars(xtheme_text('panel_opacity')) ?> <span class="xtheme-inline-value" id="panel_opacity_value"></span></label>
+    <input type="range" form="xtheme-form" min="0.10" max="1.00" step="0.01" name="panel_opacity" id="panel_opacity" value="<?= htmlspecialchars($themeConfig['panel_opacity']) ?>">
+
+    <label for="panel_border_color"><?= htmlspecialchars(xtheme_text('panel_border_color')) ?></label>
+    <input type="color" form="xtheme-form" name="panel_border_color" id="panel_border_color" value="<?= htmlspecialchars($themeConfig['panel_border_color']) ?>">
+
+    <label for="panel_border_opacity"><?= htmlspecialchars(xtheme_text('panel_border_opacity')) ?> <span class="xtheme-inline-value" id="panel_border_opacity_value"></span></label>
+    <input type="range" form="xtheme-form" min="0" max="1.00" step="0.01" name="panel_border_opacity" id="panel_border_opacity" value="<?= htmlspecialchars($themeConfig['panel_border_opacity']) ?>">
+  </div>
+</div>
+
+<script>
+var xthemeText = <?= json_encode($jsText, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+
+function XThemeSetStatus(message, isError) {
+  var node = $('#xtheme-status');
+  node.text(message || '');
+  node.css('color', isError ? '#f87171' : '#86efac');
+}
+
+function XThemeSyncRange(id, suffix) {
+  var value = $('#' + id).val();
+  $('#' + id + '_value').text(value + suffix);
+}
+
+function XThemeRefreshRanges() {
+  XThemeSyncRange('background_blur', 'px');
+  XThemeSyncRange('glass_blur', 'px');
+  XThemeSyncRange('overlay_opacity', '');
+  XThemeSyncRange('panel_opacity', '');
+  XThemeSyncRange('panel_border_opacity', '');
+}
+
+function XThemeAfterSave() {
+  XThemeSetStatus(xthemeText.saving, false);
+  setTimeout(function() {
+    location.reload();
+  }, 1200);
+  return true;
+}
+
+function XThemeUploadBackground() {
+  var input = $('#background_file')[0];
+  if (!input.files || !input.files.length) {
+    XThemeSetStatus(xthemeText.choose_image, true);
+    return;
+  }
+
+  var file = input.files[0];
+  var reader = new FileReader();
+  XThemeSetStatus(xthemeText.uploading, false);
+
+  reader.onerror = function() {
+    XThemeSetStatus(xthemeText.upload_unreadable, true);
+  };
+
+  reader.onload = function() {
+    var result = reader.result || '';
+    if (typeof result !== 'string' || result.indexOf('base64,') === -1) {
+      XThemeSetStatus(xthemeText.upload_unreadable, true);
+      return;
+    }
+
+    var payload = new FormData();
+    payload.append('csrf_token', csrf_token);
+    payload.append('filename', file.name);
+    payload.append('mime', file.type || 'application/octet-stream');
+    payload.append('content', result.split('base64,', 2)[1]);
+
+    $.ajax({
+      url: '/plugins/xtheme/scripts/upload_background.php',
+      method: 'POST',
+      data: payload,
+      processData: false,
+      contentType: false
+    }).done(function(response) {
+      var data = response;
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (error) {
+          XThemeSetStatus(xthemeText.upload_unreadable, true);
+          return;
+        }
+      }
+
+      if (!data.ok) {
+        XThemeSetStatus(data.message || xthemeText.upload_failed, true);
+        return;
+      }
+
+      $('#background_image').val(data.url);
+      $('#background_file').val('');
+      XThemeSetStatus(data.message || xthemeText.uploaded, false);
+    }).fail(function(xhr) {
+      var message = xthemeText.upload_failed;
+      if (xhr && xhr.responseText) {
+        try {
+          var data = JSON.parse(xhr.responseText);
+          message = data.message || message;
+        } catch (error) {
+        }
+      }
+      XThemeSetStatus(message, true);
+    });
+  };
+
+  reader.readAsDataURL(file);
+}
+
+function XThemeClearBackground() {
+  $('#background_image').val('');
+  $('#background_file').val('');
+  XThemeSetStatus(xthemeText.cleared, false);
+}
+
+$(function() {
+  XThemeRefreshRanges();
+  $('#background_blur,#glass_blur,#overlay_opacity,#panel_opacity,#panel_border_opacity').on('input change', XThemeRefreshRanges);
+});
+</script>

@@ -1,0 +1,10 @@
+# Local reference repos used during development
+ref-*/
+
+# Temporary release copies
+dist/release/
+
+# OS/editor noise
+Thumbs.db
+.DS_Store
+
