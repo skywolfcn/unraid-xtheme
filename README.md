@@ -74,7 +74,7 @@ Release workflow:
 1. Build the public package:
 
 ```powershell
-.\build.ps1 -Version 2026.05.12.105 -PluginRepo skywolfcn/unraid-xtheme
+.\build.ps1 -Version 2026.05.12.106 -PluginRepo skywolfcn/unraid-xtheme
 ```
 
 2. Commit and push:

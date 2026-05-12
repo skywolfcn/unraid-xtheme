@@ -45,7 +45,7 @@ function Write-PluginFile {
     }
 
     $packageFileBlock = @'
-<FILE Name="/boot/config/plugins/&name;/packages/__PACKAGE_TARGET_NAME__" Run="upgradepkg --reinstall --install-new">
+<FILE Name="/boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__" Run="upgradepkg --reinstall --install-new">
 <__SOURCE_TAG__>__SOURCE_VALUE__</__SOURCE_TAG__>
 <MD5>&md5;</MD5>
 </FILE>
@@ -53,15 +53,15 @@ function Write-PluginFile {
 
     if ($DecodeBase64Package) {
         $packageFileBlock = @'
-<FILE Name="/boot/config/plugins/&name;/packages/__PACKAGE_TARGET_NAME__">
+<FILE Name="/boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__">
 <__SOURCE_TAG__>__SOURCE_VALUE__</__SOURCE_TAG__>
 <MD5>&md5;</MD5>
 </FILE>
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-base64 -d /boot/config/plugins/&name;/packages/__PACKAGE_TARGET_NAME__ > /boot/config/plugins/&name;/packages/&name;-&version;-x86_64-1.txz
-upgradepkg --reinstall --install-new /boot/config/plugins/&name;/packages/&name;-&version;-x86_64-1.txz
-rm -f /boot/config/plugins/&name;/packages/__PACKAGE_TARGET_NAME__
+base64 -d /boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__ > /boot/config/plugins/__PLUGIN_NAME__/packages/__PLUGIN_NAME__-__VERSION__-x86_64-1.txz
+upgradepkg --reinstall --install-new /boot/config/plugins/__PLUGIN_NAME__/packages/__PLUGIN_NAME__-__VERSION__-x86_64-1.txz
+rm -f /boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__
 ]]></INLINE>
 </FILE>
 '@
@@ -83,8 +83,8 @@ rm -f /boot/config/plugins/&name;/packages/__PACKAGE_TARGET_NAME__
 </CHANGES>
 <FILE Run="/bin/bash">
 <INLINE>
-mkdir -p /boot/config/plugins/&name;/packages
-rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
+mkdir -p /boot/config/plugins/__PLUGIN_NAME__/packages
+rm -f $(ls /boot/config/plugins/__PLUGIN_NAME__/__PLUGIN_NAME__*.txz 2&gt;/dev/null | grep -v '__VERSION__')
 </INLINE>
 </FILE>
 __PACKAGE_FILE_BLOCK__
@@ -100,7 +100,7 @@ ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
-removepkg __PLUGIN_NAME__-&version;-x86_64-1 2>/dev/null
+removepkg __PLUGIN_NAME__-__VERSION__-x86_64-1 2>/dev/null
 rm -f /boot/config/plugins/__PLUGIN_NAME__.plg
 rm -rf /usr/local/emhttp/plugins/xtheme
 rm -rf /boot/config/plugins/xtheme
@@ -110,6 +110,8 @@ rm -rf /boot/config/plugins/xtheme
 '@
 
     $packageFileBlock = $packageFileBlock.Replace('__PACKAGE_TARGET_NAME__', $PackageTargetName)
+    $packageFileBlock = $packageFileBlock.Replace('__PLUGIN_NAME__', $pluginName)
+    $packageFileBlock = $packageFileBlock.Replace('__VERSION__', $VersionValue)
     $packageFileBlock = $packageFileBlock.Replace('__SOURCE_TAG__', $SourceTag)
     $packageFileBlock = $packageFileBlock.Replace('__SOURCE_VALUE__', $SourceValue)
 
@@ -124,7 +126,8 @@ rm -rf /boot/config/plugins/xtheme
     $xml = $xml.Replace('__PACKAGE_TARGET_NAME__', $PackageTargetName)
     $xml = $xml.Replace('__PACKAGE_FILE_BLOCK__', $packageFileBlock)
 
-    Set-Content -Path $Destination -Value $xml -Encoding utf8
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($Destination, $xml, $utf8NoBom)
 }
 
 Ensure-Dir $archiveDir
