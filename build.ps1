@@ -60,7 +60,7 @@ mkdir -p /boot/config/plugins/&name;/packages
 rm -f $(ls /boot/config/plugins/&name;/&name;*.txz 2&gt;/dev/null | grep -v '&version;')
 </INLINE>
 </FILE>
-<FILE Name="/boot/config/plugins/&name;/&name;-&version;-x86_64-1.txz" Run="upgradepkg --install-new">
+<FILE Name="/boot/config/plugins/&name;/packages/&name;-&version;-x86_64-1.txz" Run="upgradepkg --reinstall --install-new">
 <__SOURCE_TAG__>__SOURCE_VALUE__</__SOURCE_TAG__>
 <MD5>&md5;</MD5>
 </FILE>
