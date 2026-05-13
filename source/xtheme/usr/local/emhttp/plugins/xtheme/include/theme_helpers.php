@@ -403,7 +403,7 @@ function xtheme_text(string $key): string
         'zh' => [
             'x_theme' => 'XTheme',
             'theme_toggle_title' => '主题设置',
-            'theme_toggle_text' => '保持简单：背景、Dynamix 主题、关键颜色和少量毛玻璃参数都放在这里。',
+            'theme_toggle_text' => '保持简单：只调整背景、Dynamix 主题、关键颜色和少量毛玻璃参数。',
             'theme_list' => '主题方案',
             'theme_name' => '主题名称',
             'create_theme' => '新建主题',
@@ -435,7 +435,7 @@ function xtheme_text(string $key): string
             'import_theme' => '导入主题',
             'import_archive' => '主题 ZIP 文件',
             'glass_title' => '毛玻璃调节',
-            'glass_text' => '用这几项来调背景模糊、面板毛玻璃和整体遮罩强度。',
+            'glass_text' => '用这几项来调整背景模糊、面板毛玻璃和整体遮罩强度。',
             'background_blur' => '背景模糊',
             'glass_blur' => '毛玻璃模糊',
             'overlay_strength' => '遮罩强度',
@@ -1026,7 +1026,15 @@ function xtheme_write_config(array $input): bool
         @mkdir($dir, 0777, true);
     }
 
-    return @file_put_contents(xtheme_config_path(), $content, LOCK_EX) !== false;
+    $written = @file_put_contents(xtheme_config_path(), $content, LOCK_EX) !== false;
+    if ($written) {
+        require_once __DIR__ . '/login_theme_runtime.php';
+        if (function_exists('xtheme_login_theme_refresh_from_config')) {
+            xtheme_login_theme_refresh_from_config($config);
+        }
+    }
+
+    return $written;
 }
 
 function xtheme_read_config(): array

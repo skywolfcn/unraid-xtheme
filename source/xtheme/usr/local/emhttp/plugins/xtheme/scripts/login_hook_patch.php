@@ -6,7 +6,8 @@ $targets = [
     '/usr/local/emhttp/webGui/include/.set-password.php',
 ];
 
-$marker = "<?php /* XTheme login hook start */ @include '/usr/local/emhttp/plugins/xtheme/include/login_theme_hook.php'; /* XTheme login hook end */ ?>";
+$marker = "<?php /* XTheme login hook start */ @readfile('/boot/config/plugins/xtheme/login-theme.html'); /* XTheme login hook end */ ?>";
+$markerPattern = '#\s*<\?php /\* XTheme login hook start \*/ .*? /\* XTheme login hook end \*/ \?>\s*#s';
 
 foreach ($targets as $target) {
     if (!is_file($target) || !is_readable($target) || !is_writable($target)) {
@@ -19,12 +20,7 @@ foreach ($targets as $target) {
     }
 
     if ($mode === 'remove') {
-        $updated = preg_replace(
-            '#\s*<\?php /\* XTheme login hook start \*/ @include \'/usr/local/emhttp/plugins/xtheme/include/login_theme_hook\.php\'; /\* XTheme login hook end \*/ \?>\s*#',
-            "\n",
-            $content,
-            1
-        );
+        $updated = preg_replace($markerPattern, "\n", $content, 1);
         if (is_string($updated) && $updated !== $content) {
             @file_put_contents($target, $updated, LOCK_EX);
         }
@@ -32,6 +28,10 @@ foreach ($targets as $target) {
     }
 
     if (strpos($content, 'XTheme login hook start') !== false) {
+        $updated = preg_replace($markerPattern, "\n  {$marker}\n", $content, 1);
+        if (is_string($updated) && $updated !== $content) {
+            @file_put_contents($target, $updated, LOCK_EX);
+        }
         continue;
     }
 

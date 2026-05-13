@@ -26,6 +26,19 @@ function Ensure-Dir {
     }
 }
 
+function Normalize-PageFiles {
+    param([string]$Root)
+
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    Get-ChildItem -Path $Root -Recurse -Filter '*.page' -File | ForEach-Object {
+        $raw = [System.IO.File]::ReadAllText($_.FullName)
+        $normalized = $raw.Replace("`r`n", "`n").Replace("`r", "`n")
+        if ($normalized -ne $raw) {
+            [System.IO.File]::WriteAllText($_.FullName, $normalized, $utf8NoBom)
+        }
+    }
+}
+
 function Write-PluginFile {
     param(
         [string]$Destination,
@@ -97,6 +110,7 @@ fi
 rm -rf /usr/local/emhttp/plugins/xtheme/backgrounds
 ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme/backgrounds
 php /usr/local/emhttp/plugins/xtheme/scripts/login_hook_patch.php install >/dev/null 2>&1 || true
+php /usr/local/emhttp/plugins/xtheme/scripts/refresh_login_theme.php >/dev/null 2>&1 || true
 ]]></INLINE>
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
@@ -148,11 +162,18 @@ if (Test-Path $releasePackageTextPath) {
     Remove-Item $releasePackageTextPath -Force
 }
 
-Push-Location $sourceRoot
+$stageRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("xtheme-build-" + [System.Guid]::NewGuid().ToString('N'))
+Copy-Item -Path $sourceRoot -Destination $stageRoot -Recurse
+Normalize-PageFiles -Root $stageRoot
+
+Push-Location $stageRoot
 try {
     tar -cJf $packagePath .
 } finally {
     Pop-Location
+    if (Test-Path $stageRoot) {
+        Remove-Item -LiteralPath $stageRoot -Recurse -Force
+    }
 }
 
 $md5 = (Get-FileHash -Algorithm MD5 -Path $packagePath).Hash.ToLower()
