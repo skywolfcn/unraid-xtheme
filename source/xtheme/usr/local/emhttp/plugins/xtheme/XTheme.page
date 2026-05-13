@@ -4,17 +4,42 @@ Icon="paint-brush"
 ---
 <?php
 require_once '/usr/local/emhttp/plugins/xtheme/include/theme_helpers.php';
-$themeConfig = xtheme_read_config();
+$themeConfig = xtheme_live_config();
+$dynamixThemes = xtheme_dynamix_themes();
+$themes = xtheme_read_themes();
+$selectedThemeId = xtheme_theme_slug((string)($_GET['theme_id'] ?? $themeConfig['theme_id']), $themeConfig['theme_id']);
+$selectedTheme = xtheme_find_theme($themes, $selectedThemeId);
+if (!$selectedTheme) {
+    $selectedTheme = xtheme_sanitize_theme_record(array_merge(
+        ['id' => $themeConfig['theme_id'], 'name' => $themeConfig['theme_name']],
+        xtheme_public_config($themeConfig)
+    ));
+    $selectedThemeId = $selectedTheme['id'];
+}
+$themePayload = [];
+foreach ($themes as $theme) {
+    $theme['can_delete'] = xtheme_can_delete_theme((string)($theme['id'] ?? ''));
+    $themePayload[$theme['id']] = $theme;
+}
 $pageCsrfToken = htmlspecialchars((string)($var['csrf_token'] ?? ''), ENT_QUOTES);
 $jsText = [
     'saving' => xtheme_text('status_saving'),
     'choose_image' => xtheme_text('status_choose_image'),
+    'choose_theme_archive' => xtheme_text('status_choose_theme_archive'),
     'uploading' => xtheme_text('status_uploading'),
+    'importing' => xtheme_text('status_importing'),
     'upload_unreadable' => xtheme_text('status_upload_unreadable'),
     'upload_failed' => xtheme_text('status_upload_failed'),
+    'import_failed' => xtheme_text('status_import_failed'),
     'upload_refresh' => xtheme_text('status_upload_refresh'),
     'uploaded' => xtheme_text('status_uploaded'),
+    'imported' => xtheme_text('status_imported'),
     'cleared' => xtheme_text('status_cleared'),
+    'deleting' => xtheme_text('status_deleting'),
+    'deleted' => xtheme_text('status_deleted'),
+    'delete_failed' => xtheme_text('status_delete_failed'),
+    'delete_confirm' => xtheme_text('delete_confirm'),
+    'delete_blocked' => xtheme_text('delete_blocked'),
     'picker_close' => xtheme_text('picker_close'),
     'picker_open' => xtheme_text('picker_open'),
     'picker_input' => xtheme_text('picker_input'),
@@ -138,6 +163,26 @@ function xtheme_render_color_control(string $name, string $label, string $value,
     margin-top: 8px;
   }
 
+  .xtheme-delete-button {
+    background: linear-gradient(135deg, #a83232, #7f1d1d) !important;
+    color: #fff5f5 !important;
+    border: none !important;
+    box-shadow: 0 10px 22px rgba(127, 29, 29, 0.22);
+  }
+
+  .xtheme-delete-button:hover,
+  .xtheme-delete-button:focus {
+    background: linear-gradient(135deg, #c24141, #991b1b) !important;
+  }
+
+  .xtheme-delete-button:disabled {
+    background: rgba(71, 85, 105, 0.7) !important;
+    color: rgba(226, 232, 240, 0.72) !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+
   .xtheme-status {
     margin-top: 12px;
     min-height: 22px;
@@ -199,18 +244,43 @@ function xtheme_render_color_control(string $name, string $label, string $value,
     <h3><?= htmlspecialchars(xtheme_text('theme_toggle_title')) ?></h3>
     <p><?= htmlspecialchars(xtheme_text('theme_toggle_text')) ?></p>
 
-    <form markdown="1" id="xtheme-form" method="POST" action="/update.php" target="progressFrame" onsubmit="return XThemeAfterSave();">
-      <input type="hidden" name="#file" value="xtheme/xtheme.cfg">
-      <input type="hidden" name="#section" value="XTheme">
+    <form markdown="1" id="xtheme-form" method="POST" action="#" onsubmit="return false;">
+      <input type="hidden" name="selected_theme_id" id="selected_theme_id" value="<?= htmlspecialchars($selectedThemeId) ?>">
+      <input type="hidden" name="dynamix_state_active" value="<?= htmlspecialchars($themeConfig['dynamix_state_active']) ?>">
+      <input type="hidden" name="dynamix_backup_theme" value="<?= htmlspecialchars($themeConfig['dynamix_backup_theme']) ?>">
+      <input type="hidden" name="dynamix_backup_header" value="<?= htmlspecialchars($themeConfig['dynamix_backup_header']) ?>">
+      <input type="hidden" name="dynamix_backup_headermetacolor" value="<?= htmlspecialchars($themeConfig['dynamix_backup_headermetacolor']) ?>">
+
+      <label for="theme_select"><?= htmlspecialchars(xtheme_text('theme_list')) ?></label>
+      <select id="theme_select">
+<?php foreach ($themes as $theme): ?>
+        <?= mk_option($selectedThemeId, $theme['id'], $theme['name']) ?>
+<?php endforeach; ?>
+      </select>
+
+      <label for="theme_name"><?= htmlspecialchars(xtheme_text('theme_name')) ?></label>
+      <input type="text" name="theme_name" id="theme_name" value="<?= htmlspecialchars($selectedTheme['name']) ?>">
+
+      <div class="xtheme-actions">
+        <input type="button" value="<?= htmlspecialchars(xtheme_text('create_theme')) ?>" onclick="XThemeSaveTheme('create');">
+        <input type="button" id="xtheme-delete-theme" class="xtheme-delete-button" value="<?= htmlspecialchars(xtheme_text('delete_theme')) ?>" onclick="XThemeDeleteTheme();">
+      </div>
 
       <label for="enabled"><?= htmlspecialchars(xtheme_text('enable_theme')) ?></label>
       <select name="enabled" id="enabled">
-        <?= mk_option($themeConfig['enabled'], '1', 'Yes') ?>
-        <?= mk_option($themeConfig['enabled'], '0', 'No') ?>
+        <?= mk_option($selectedTheme['enabled'], '1', 'Yes') ?>
+        <?= mk_option($selectedTheme['enabled'], '0', 'No') ?>
+      </select>
+
+      <label for="dynamix_theme"><?= htmlspecialchars(xtheme_text('dynamix_theme')) ?></label>
+      <select name="dynamix_theme" id="dynamix_theme">
+<?php foreach ($dynamixThemes as $dynamixTheme): ?>
+        <?= mk_option($selectedTheme['dynamix_theme'], $dynamixTheme, xtheme_theme_label($dynamixTheme)) ?>
+<?php endforeach; ?>
       </select>
 
       <label for="background_image"><?= htmlspecialchars(xtheme_text('background_image_url')) ?></label>
-      <input type="text" name="background_image" id="background_image" value="<?= htmlspecialchars($themeConfig['background_image']) ?>" placeholder="https://...">
+      <input type="text" name="background_image" id="background_image" value="<?= htmlspecialchars($selectedTheme['background_image']) ?>" placeholder="https://...">
 
       <div class="xtheme-section-title"><?= htmlspecialchars(xtheme_text('background_title')) ?></div>
       <p><?= htmlspecialchars(xtheme_text('background_text')) ?></p>
@@ -224,46 +294,63 @@ function xtheme_render_color_control(string $name, string $label, string $value,
         <input type="button" value="<?= htmlspecialchars(xtheme_text('clear_background')) ?>" onclick="XThemeClearBackground();">
       </div>
 
+      <div class="xtheme-section-title"><?= htmlspecialchars(xtheme_text('share_title')) ?></div>
+      <p><?= htmlspecialchars(xtheme_text('share_text')) ?></p>
+
+      <div class="xtheme-actions">
+        <input type="button" value="<?= htmlspecialchars(xtheme_text('export_theme')) ?>" onclick="XThemeExportTheme();">
+      </div>
+
+      <label for="theme_archive"><?= htmlspecialchars(xtheme_text('import_archive')) ?></label>
+      <input type="file" id="theme_archive" accept=".zip,application/zip">
+
+      <div class="xtheme-actions">
+        <input type="button" value="<?= htmlspecialchars(xtheme_text('import_theme')) ?>" onclick="XThemeImportTheme();">
+      </div>
+
       <div class="xtheme-status" id="xtheme-status"></div>
 
       <div class="xtheme-section-title"><?= htmlspecialchars(xtheme_text('glass_title')) ?></div>
       <p><?= htmlspecialchars(xtheme_text('glass_text')) ?></p>
 
       <label for="background_blur"><?= htmlspecialchars(xtheme_text('background_blur')) ?> <span class="xtheme-inline-value" id="background_blur_value"></span></label>
-      <input type="range" form="xtheme-form" min="0" max="40" step="1" name="background_blur" id="background_blur" value="<?= htmlspecialchars($themeConfig['background_blur']) ?>">
+      <input type="range" form="xtheme-form" min="0" max="40" step="1" name="background_blur" id="background_blur" value="<?= htmlspecialchars($selectedTheme['background_blur']) ?>">
 
       <label for="glass_blur"><?= htmlspecialchars(xtheme_text('glass_blur')) ?> <span class="xtheme-inline-value" id="glass_blur_value"></span></label>
-      <input type="range" form="xtheme-form" min="0" max="25" step="1" name="glass_blur" id="glass_blur" value="<?= htmlspecialchars($themeConfig['glass_blur']) ?>">
+      <input type="range" form="xtheme-form" min="0" max="25" step="1" name="glass_blur" id="glass_blur" value="<?= htmlspecialchars($selectedTheme['glass_blur']) ?>">
 
       <label for="overlay_opacity"><?= htmlspecialchars(xtheme_text('overlay_strength')) ?> <span class="xtheme-inline-value" id="overlay_opacity_value"></span></label>
-      <input type="range" form="xtheme-form" min="0" max="0.90" step="0.01" name="overlay_opacity" id="overlay_opacity" value="<?= htmlspecialchars($themeConfig['overlay_opacity']) ?>">
+      <input type="range" form="xtheme-form" min="0" max="0.90" step="0.01" name="overlay_opacity" id="overlay_opacity" value="<?= htmlspecialchars($selectedTheme['overlay_opacity']) ?>">
 
       <div class="xtheme-save-wrap">
-        <input type="submit" class="xtheme-save-button" name="#apply" value="<?= htmlspecialchars(xtheme_text('save_theme')) ?>">
+        <input type="button" class="xtheme-save-button" style="background:linear-gradient(135deg,#ff8a1f,#ff5a1f) !important;color:#fff7ed !important;border:none !important;box-shadow:0 12px 28px rgba(255,106,31,.28) !important;" value="<?= htmlspecialchars(xtheme_text('save_theme')) ?>" onclick="XThemeSaveTheme('save');">
       </div>
     </form>
   </div>
 
   <div class="xtheme-card">
     <h3><?= htmlspecialchars(xtheme_text('color_title')) ?></h3>
-    <?php xtheme_render_color_control('progress_fill_color', xtheme_text('progress_fill_color'), $themeConfig['progress_fill_color']); ?>
-    <?php xtheme_render_color_control('progress_track_color', xtheme_text('progress_track_color'), $themeConfig['progress_track_color']); ?>
-    <?php xtheme_render_color_control('text_color', xtheme_text('text_color'), $themeConfig['text_color']); ?>
-    <?php xtheme_render_color_control('accent_color', xtheme_text('accent_color'), $themeConfig['accent_color']); ?>
-    <?php xtheme_render_color_control('link_color', xtheme_text('link_color'), $themeConfig['link_color']); ?>
-    <?php xtheme_render_color_control('highlight_value_color', xtheme_text('highlight_value_color'), $themeConfig['highlight_value_color']); ?>
-    <?php xtheme_render_color_control('header_color', xtheme_text('header_color'), $themeConfig['header_color']); ?>
-    <?php xtheme_render_color_control('menu_color', xtheme_text('menu_color'), $themeConfig['menu_color']); ?>
-    <?php xtheme_render_color_control('title_color', xtheme_text('title_bar_color'), $themeConfig['title_color']); ?>
-    <?php xtheme_render_color_control('title_text_color', xtheme_text('title_text_color'), $themeConfig['title_text_color']); ?>
-    <?php xtheme_render_color_control('panel_color', xtheme_text('panel_color'), $themeConfig['panel_color']); ?>
-    <?php xtheme_render_color_control('panel_border_color', xtheme_text('panel_border_color'), $themeConfig['panel_border_color']); ?>
+    <?php xtheme_render_color_control('progress_fill_color', xtheme_text('progress_fill_color'), $selectedTheme['progress_fill_color']); ?>
+    <?php xtheme_render_color_control('progress_track_color', xtheme_text('progress_track_color'), $selectedTheme['progress_track_color']); ?>
+    <?php xtheme_render_color_control('text_color', xtheme_text('text_color'), $selectedTheme['text_color']); ?>
+    <?php xtheme_render_color_control('accent_color', xtheme_text('accent_color'), $selectedTheme['accent_color']); ?>
+    <?php xtheme_render_color_control('link_color', xtheme_text('link_color'), $selectedTheme['link_color']); ?>
+    <?php xtheme_render_color_control('highlight_value_color', xtheme_text('highlight_value_color'), $selectedTheme['highlight_value_color']); ?>
+    <?php xtheme_render_color_control('header_color', xtheme_text('header_color'), $selectedTheme['header_color']); ?>
+    <?php xtheme_render_color_control('menu_color', xtheme_text('menu_color'), $selectedTheme['menu_color']); ?>
+    <?php xtheme_render_color_control('title_color', xtheme_text('title_bar_color'), $selectedTheme['title_color']); ?>
+    <?php xtheme_render_color_control('title_text_color', xtheme_text('title_text_color'), $selectedTheme['title_text_color']); ?>
+    <?php xtheme_render_color_control('secondary_text_color', xtheme_text('secondary_text_color'), $selectedTheme['secondary_text_color']); ?>
+    <?php xtheme_render_color_control('panel_color', xtheme_text('panel_color'), $selectedTheme['panel_color']); ?>
+    <?php xtheme_render_color_control('panel_border_color', xtheme_text('panel_border_color'), $selectedTheme['panel_border_color']); ?>
   </div>
 </div>
 
 <script src="/plugins/xtheme/vendor/coloris/coloris.min.js"></script>
 <script>
 var xthemeText = <?= json_encode($jsText, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+var xthemeThemes = <?= json_encode($themePayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+var xthemeThemeFields = <?= json_encode(xtheme_shareable_keys(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 
 function XThemeSetStatus(message, isError) {
   var node = $('#xtheme-status');
@@ -341,6 +428,22 @@ function XThemeRefreshRanges() {
   XThemeSyncRange('overlay_opacity', '');
 }
 
+function XThemeThemeCanDelete(themeId) {
+  var theme = xthemeThemes[themeId];
+  return !!(theme && theme.can_delete);
+}
+
+function XThemeUpdateDeleteState(themeId) {
+  var button = $('#xtheme-delete-theme');
+  if (!button.length) {
+    return;
+  }
+
+  var canDelete = XThemeThemeCanDelete(themeId);
+  button.prop('disabled', !canDelete);
+  button.attr('title', canDelete ? '' : xthemeText.delete_blocked);
+}
+
 function XThemeGetCsrfToken() {
   var inlineToken = $('#xtheme_upload_csrf').val();
   if (typeof inlineToken === 'string' && inlineToken.trim() !== '') {
@@ -381,12 +484,253 @@ function XThemeParseJsonResponse(responseText) {
   return JSON.parse(normalized);
 }
 
-function XThemeAfterSave() {
+function XThemeApplyTheme(themeId) {
+  var theme = xthemeThemes[themeId];
+  if (!theme) {
+    return;
+  }
+
+  $('#selected_theme_id').val(theme.id);
+  $('#theme_select').val(theme.id);
+  $('#theme_name').val(theme.name);
+
+  xthemeThemeFields.forEach(function(field) {
+    if (!Object.prototype.hasOwnProperty.call(theme, field)) {
+      return;
+    }
+
+    var node = $('#' + field);
+    if (!node.length) {
+      return;
+    }
+
+    node.val(theme[field]);
+    if (node.is('.xtheme-color-field')) {
+      XThemeRefreshColorPreview(field);
+    }
+  });
+
+  XThemeRefreshRanges();
+  XThemeUpdateDeleteState(theme.id);
+  XThemeSetStatus('', false);
+}
+
+function XThemeCollectThemePayload() {
+  var payload = {
+    selected_theme_id: $('#selected_theme_id').val(),
+    theme_name: $('#theme_name').val()
+  };
+
+  xthemeThemeFields.forEach(function(field) {
+    var node = $('#' + field);
+    if (!node.length) {
+      return;
+    }
+    payload[field] = node.val();
+  });
+
+  return payload;
+}
+
+function XThemeSaveTheme(mode) {
+  var csrfToken = XThemeGetCsrfToken();
+  if (!csrfToken) {
+    XThemeSetStatus(xthemeText.upload_refresh, true);
+    return;
+  }
+
+  var payload = XThemeCollectThemePayload();
+  payload.mode = mode || 'save';
+  payload.csrf_token = csrfToken;
+
   XThemeSetStatus(xthemeText.saving, false);
-  setTimeout(function() {
-    location.reload();
-  }, 1200);
-  return true;
+
+  $.ajax({
+    url: '/plugins/xtheme/scripts/save_theme.php',
+    method: 'POST',
+    data: payload
+  }).done(function(response) {
+    var data = response;
+    if (typeof data === 'string') {
+      try {
+        data = XThemeParseJsonResponse(data);
+      } catch (error) {
+        data = null;
+      }
+    }
+
+    if (!data || !data.ok) {
+      XThemeSetStatus((data && data.message) || xthemeText.upload_failed, true);
+      return;
+    }
+
+    setTimeout(function() {
+      var themeId = encodeURIComponent(data.theme_id || payload.selected_theme_id || '');
+      location.href = '/Settings/XTheme?theme_id=' + themeId;
+    }, 400);
+  }).fail(function(xhr) {
+    var message = xthemeText.upload_failed;
+    if (xhr && xhr.responseText) {
+      try {
+        var data = XThemeParseJsonResponse(xhr.responseText);
+        if (data && data.message) {
+          message = data.message;
+        }
+      } catch (error) {
+      }
+    }
+    XThemeSetStatus(message, true);
+  });
+}
+
+function XThemeDeleteTheme() {
+  var themeId = $('#selected_theme_id').val() || '';
+  var theme = xthemeThemes[themeId];
+  if (!theme || !XThemeThemeCanDelete(themeId)) {
+    XThemeSetStatus(xthemeText.delete_blocked, true);
+    return;
+  }
+
+  var csrfToken = XThemeGetCsrfToken();
+  if (!csrfToken) {
+    XThemeSetStatus(xthemeText.upload_refresh, true);
+    return;
+  }
+
+  var themeName = $.trim($('#theme_name').val()) || theme.name || themeId;
+  var confirmText = String(xthemeText.delete_confirm || '').replace('{name}', themeName);
+  if (!window.confirm(confirmText)) {
+    return;
+  }
+
+  XThemeSetStatus(xthemeText.deleting, false);
+
+  $.ajax({
+    url: '/plugins/xtheme/scripts/save_theme.php',
+    method: 'POST',
+    data: {
+      mode: 'delete',
+      selected_theme_id: themeId,
+      csrf_token: csrfToken
+    }
+  }).done(function(response) {
+    var data = response;
+    if (typeof data === 'string') {
+      try {
+        data = XThemeParseJsonResponse(data);
+      } catch (error) {
+        data = null;
+      }
+    }
+
+    if (!data || !data.ok) {
+      XThemeSetStatus((data && data.message) || xthemeText.delete_failed, true);
+      return;
+    }
+
+    XThemeSetStatus(data.message || xthemeText.deleted, false);
+    setTimeout(function() {
+      var nextThemeId = encodeURIComponent(data.theme_id || '');
+      location.href = '/Settings/XTheme?theme_id=' + nextThemeId;
+    }, 350);
+  }).fail(function(xhr) {
+    var message = xthemeText.delete_failed;
+    if (xhr && xhr.responseText) {
+      try {
+        var data = XThemeParseJsonResponse(xhr.responseText);
+        if (data && data.message) {
+          message = data.message;
+        }
+      } catch (error) {
+      }
+    }
+    XThemeSetStatus(message, true);
+  });
+}
+
+function XThemeExportTheme() {
+  var themeId = encodeURIComponent($('#selected_theme_id').val() || '');
+  window.location.href = '/plugins/xtheme/scripts/export_theme.php?theme_id=' + themeId;
+}
+
+function XThemeImportTheme() {
+  var input = $('#theme_archive')[0];
+  if (!input.files || !input.files.length) {
+    XThemeSetStatus(xthemeText.choose_theme_archive, true);
+    return;
+  }
+
+  var file = input.files[0];
+  var reader = new FileReader();
+  XThemeSetStatus(xthemeText.importing, false);
+
+  reader.onerror = function() {
+    XThemeSetStatus(xthemeText.import_failed, true);
+  };
+
+  reader.onload = function() {
+    var result = reader.result || '';
+    if (typeof result !== 'string' || result.indexOf('base64,') === -1) {
+      XThemeSetStatus(xthemeText.import_failed, true);
+      return;
+    }
+
+    var csrfToken = XThemeGetCsrfToken();
+    if (!csrfToken) {
+      XThemeSetStatus(xthemeText.upload_refresh, true);
+      return;
+    }
+
+    $.ajax({
+      url: '/plugins/xtheme/scripts/import_theme.php',
+      method: 'POST',
+      data: {
+        csrf_token: csrfToken,
+        filename: file.name,
+        content: result.split('base64,', 2)[1]
+      }
+    }).done(function(response, textStatus, xhr) {
+      var data = response;
+      if (typeof data === 'string') {
+        try {
+          data = XThemeParseJsonResponse(data);
+        } catch (error) {
+          data = null;
+        }
+      }
+
+      if (!data) {
+        XThemeSetStatus(xthemeText.import_failed, true);
+        return;
+      }
+
+      if (!data.ok) {
+        XThemeSetStatus(data.message || xthemeText.import_failed, true);
+        return;
+      }
+
+      $('#theme_archive').val('');
+      XThemeSetStatus(data.message || xthemeText.imported, false);
+      setTimeout(function() {
+        var themeId = encodeURIComponent(data.theme_id || '');
+        location.href = '/Settings/XTheme?theme_id=' + themeId;
+      }, 400);
+    }).fail(function(xhr) {
+      var message = xthemeText.import_failed;
+      if (xhr && xhr.responseText) {
+        try {
+          var data = XThemeParseJsonResponse(xhr.responseText);
+          if (data && data.message) {
+            message = data.message;
+          }
+        } catch (error) {
+        }
+      }
+      XThemeSetStatus(message, true);
+    });
+  };
+
+  reader.readAsDataURL(file);
 }
 
 function XThemeUploadBackground() {
@@ -419,6 +763,7 @@ function XThemeUploadBackground() {
 
     var payload = {
       csrf_token: csrfToken,
+      selected_theme_id: $('#selected_theme_id').val() || '',
       filename: file.name,
       mime: file.type || 'application/octet-stream',
       content: result.split('base64,', 2)[1]
@@ -513,7 +858,12 @@ $(function() {
     XThemeRefreshColorPreview(this.id);
   });
 
+  $('#theme_select').on('change', function() {
+    XThemeApplyTheme($(this).val());
+  });
+
   XThemeRefreshRanges();
   $('#background_blur,#glass_blur,#overlay_opacity').on('input change', XThemeRefreshRanges);
+  XThemeApplyTheme($('#selected_theme_id').val());
 });
 </script>

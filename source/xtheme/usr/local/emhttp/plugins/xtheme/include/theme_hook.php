@@ -1,7 +1,7 @@
 <?php
 require_once '/usr/local/emhttp/plugins/xtheme/include/theme_helpers.php';
 
-$themeConfig = xtheme_read_config();
+$themeConfig = xtheme_live_config();
 $backgroundImage = $themeConfig['background_image'];
 $textColor = xtheme_hex_to_rgba($themeConfig['text_color']);
 $accentColor = xtheme_hex_to_rgba($themeConfig['accent_color']);
@@ -12,6 +12,7 @@ $headerColorSoft = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['hea
 $menuColor = xtheme_hex_to_rgba($themeConfig['menu_color']);
 $titleColor = xtheme_hex_to_rgba($themeConfig['title_color']);
 $titleTextColor = xtheme_hex_to_rgba($themeConfig['title_text_color']);
+$secondaryTextColor = xtheme_hex_to_rgba($themeConfig['secondary_text_color']);
 $panelColor = xtheme_hex_to_rgba($themeConfig['panel_color']);
 $panelColorStrong = xtheme_hex_to_rgba(xtheme_color_shift_alpha($themeConfig['panel_color'], 0.08, 0.08, 1.0));
 $panelColorSoft = xtheme_hex_to_rgba(xtheme_color_shift_alpha($themeConfig['panel_color'], -0.12, 0.10, 1.0));
@@ -40,6 +41,7 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     --xtheme-menu: <?= $menuColor ?>;
     --xtheme-title: <?= $titleColor ?>;
     --xtheme-title-text: <?= $titleTextColor ?>;
+    --xtheme-text-secondary: <?= $secondaryTextColor ?>;
     --xtheme-panel: <?= $panelColor ?>;
     --xtheme-panel-strong: <?= $panelColorStrong ?>;
     --xtheme-panel-soft: <?= $panelColorSoft ?>;
@@ -52,6 +54,12 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     --xtheme-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
     --xtheme-background-blur: <?= (int)$themeConfig['background_blur'] ?>px;
     --xtheme-glass-blur: <?= (int)$themeConfig['glass_blur'] ?>px;
+    --sidebar-background: var(--xtheme-panel) !important;
+    --sidebar-text: var(--xtheme-text) !important;
+    --ca-legacy-background-color: var(--xtheme-panel) !important;
+    --template-background: var(--xtheme-panel) !important;
+    --template-hover-background: var(--xtheme-panel-strong) !important;
+    --border-color: var(--xtheme-panel-border) !important;
   }
 
   body {
@@ -163,6 +171,13 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     color: var(--xtheme-text) !important;
   }
 
+  #header .text-right,
+  #header .text-right a,
+  #header .text-right span,
+  #header .text-right i {
+    color: var(--xtheme-text-secondary) !important;
+  }
+
   #title,
   div.title {
     background: var(--xtheme-title) !important;
@@ -199,7 +214,13 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     background: <?= $accentStrong ?> !important;
   }
 
+  .xtheme-save-button,
+  input[type=button].xtheme-save-button,
   input[type=submit].xtheme-save-button,
+  .xtheme-save-button:hover,
+  .xtheme-save-button:focus,
+  input[type=button].xtheme-save-button:hover,
+  input[type=button].xtheme-save-button:focus,
   input[type=submit].xtheme-save-button:hover,
   input[type=submit].xtheme-save-button:focus {
     background: linear-gradient(135deg, #ff8a1f, #ff5a1f) !important;
@@ -208,6 +229,10 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     box-shadow: 0 12px 28px rgba(255, 106, 31, 0.28) !important;
   }
 
+  .xtheme-save-button:hover,
+  .xtheme-save-button:focus,
+  input[type=button].xtheme-save-button:hover,
+  input[type=button].xtheme-save-button:focus,
   input[type=submit].xtheme-save-button:hover,
   input[type=submit].xtheme-save-button:focus {
     background: linear-gradient(135deg, #ff9a3d, #ff6b2f) !important;
@@ -307,6 +332,43 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
     background: var(--xtheme-progress-fill) !important;
   }
 
+  .sidenav,
+  .searchArea,
+  .searchAreaHolder,
+  .mobileMenu,
+  .menuItems,
+  .mobileOverlay,
+  .sidebar,
+  #alternateView,
+  #alternateView table,
+  #sidenavContent,
+  .popupCloseArea,
+  .popupCloseArea > div {
+    background: var(--xtheme-panel) !important;
+    background-color: var(--xtheme-panel) !important;
+    background-image: none !important;
+    color: var(--xtheme-text) !important;
+    border-color: var(--xtheme-panel-border) !important;
+  }
+
+  .menuItems *,
+  .searchArea *,
+  .sidenav *,
+  #alternateView *,
+  #sidenavContent * {
+    border-color: var(--xtheme-panel-border) !important;
+  }
+
+  .menuItems,
+  .searchArea,
+  .searchAreaHolder,
+  .sidenav,
+  #alternateView,
+  #alternateView table,
+  #sidenavContent {
+    box-shadow: var(--xtheme-shadow);
+  }
+
   select,
   textarea,
   input[type=text],
@@ -349,7 +411,66 @@ $placeholderColor = xtheme_hex_to_rgba(xtheme_color_scale_alpha($themeConfig['te
 <?php endif; ?>
 </style>
 <script>
+function XThemeApplyStyleToNodes(selector, styles) {
+  if (!document || typeof document.querySelectorAll !== 'function') {
+    return;
+  }
+
+  document.querySelectorAll(selector).forEach(function(node) {
+    Object.keys(styles).forEach(function(property) {
+      node.style.setProperty(property, styles[property], 'important');
+    });
+  });
+}
+
+function XThemeApplyCommunityApplicationsTheme() {
+<?php if ($themeConfig['enabled'] === '1'): ?>
+  if (document && document.documentElement && document.documentElement.style) {
+    document.documentElement.style.setProperty('--sidebar-background', '<?= addslashes($panelColor) ?>');
+    document.documentElement.style.setProperty('--sidebar-text', '<?= addslashes($textColor) ?>');
+    document.documentElement.style.setProperty('--ca-legacy-background-color', '<?= addslashes($panelColor) ?>');
+    document.documentElement.style.setProperty('--template-background', '<?= addslashes($panelColor) ?>');
+    document.documentElement.style.setProperty('--template-hover-background', '<?= addslashes($panelColorStrong) ?>');
+    document.documentElement.style.setProperty('--border-color', '<?= addslashes($panelBorder) ?>');
+  }
+
+  XThemeApplyStyleToNodes('.menuItems,.searchArea,.searchAreaHolder,.mobileMenu,.mobileOverlay,.sidenav,#alternateView,#alternateView table,#sidenavContent,.popupCloseArea,.popupCloseArea > div', {
+    'background': '<?= addslashes($panelColor) ?>',
+    'background-color': '<?= addslashes($panelColor) ?>',
+    'background-image': 'none',
+    'color': '<?= addslashes($textColor) ?>',
+    'border-color': '<?= addslashes($panelBorder) ?>'
+  });
+
+  XThemeApplyStyleToNodes('.menuItems a,.menuItems div,.menuItems span,.menuItems li,.searchArea a,.searchArea div,.searchArea span,.sidenav a,.sidenav div,.sidenav span,#alternateView a,#alternateView div,#alternateView span,#sidenavContent a,#sidenavContent div,#sidenavContent span', {
+    'color': '<?= addslashes($textColor) ?>',
+    'border-color': '<?= addslashes($panelBorder) ?>'
+  });
+
+  XThemeApplyStyleToNodes('.selectedMenu,.menuItems .selectedMenu,.menuItems .selectedMenu a', {
+    'color': '<?= addslashes($accentColor) ?>'
+  });
+<?php endif; ?>
+}
+
 function XThemeHook() {
+  XThemeApplyCommunityApplicationsTheme();
+
+<?php if ($themeConfig['enabled'] === '1'): ?>
+  if (!window.__xthemeCAObserver && typeof MutationObserver !== 'undefined' && document && document.body) {
+    window.__xthemeCAObserver = new MutationObserver(function() {
+      XThemeApplyCommunityApplicationsTheme();
+    });
+    window.__xthemeCAObserver.observe(document.body, { childList: true, subtree: true });
+  }
+<?php endif; ?>
+
   return false;
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', XThemeHook);
+} else {
+  XThemeHook();
 }
 </script>

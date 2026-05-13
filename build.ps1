@@ -96,10 +96,12 @@ if [ ! -f /boot/config/plugins/xtheme/xtheme.cfg ]; then
 fi
 rm -rf /usr/local/emhttp/plugins/xtheme/backgrounds
 ln -snf /boot/config/plugins/xtheme/backgrounds /usr/local/emhttp/plugins/xtheme/backgrounds
+php /usr/local/emhttp/plugins/xtheme/scripts/login_hook_patch.php install >/dev/null 2>&1 || true
 ]]></INLINE>
 </FILE>
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
+php /usr/local/emhttp/plugins/xtheme/scripts/login_hook_patch.php remove >/dev/null 2>&1 || true
 removepkg __PLUGIN_NAME__-__VERSION__-x86_64-1 2>/dev/null
 rm -f /boot/config/plugins/__PLUGIN_NAME__.plg
 rm -rf /usr/local/emhttp/plugins/xtheme

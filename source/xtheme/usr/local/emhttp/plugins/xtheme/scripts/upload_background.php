@@ -33,6 +33,8 @@ $allowed = [
     'image/webp' => 'webp',
 ];
 
+$themeId = xtheme_theme_slug((string)($_POST['selected_theme_id'] ?? ($_POST['theme_id'] ?? 'current-theme')), 'current-theme');
+
 $binary = base64_decode($encodedContent, true);
 if ($binary === false) {
     http_response_code(400);
@@ -64,13 +66,17 @@ if (!is_dir(xtheme_background_dir())) {
     mkdir(xtheme_background_dir(), 0777, true);
 }
 
-foreach (glob(xtheme_background_dir() . '/background.*') ?: [] as $existingFile) {
+if (!is_dir(xtheme_theme_background_dir($themeId))) {
+    mkdir(xtheme_theme_background_dir($themeId), 0777, true);
+}
+
+foreach (glob(xtheme_theme_background_dir($themeId) . '/background.*') ?: [] as $existingFile) {
     @unlink($existingFile);
 }
 
 $extension = $allowed[$mime];
 $targetName = 'background.' . $extension;
-$targetPath = xtheme_background_dir() . '/' . $targetName;
+$targetPath = xtheme_theme_background_dir($themeId) . '/' . $targetName;
 
 if (file_put_contents($targetPath, $binary, LOCK_EX) === false) {
     http_response_code(500);
@@ -82,6 +88,6 @@ if (file_put_contents($targetPath, $binary, LOCK_EX) === false) {
 
 xtheme_json_response([
     'ok' => true,
-    'url' => '/plugins/xtheme/backgrounds/' . rawurlencode($targetName),
+    'url' => xtheme_theme_background_web_path($themeId, $targetName),
     'message' => xtheme_text('upload_success'),
 ]);
