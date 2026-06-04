@@ -103,6 +103,16 @@ rm -f $(ls /boot/config/plugins/__PLUGIN_NAME__/__PLUGIN_NAME__*.txz 2&gt;/dev/n
 __PACKAGE_FILE_BLOCK__
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
+plugin_url="__PLUGIN_URL__"
+case "$plugin_url" in
+  file://*)
+    cp -f "${plugin_url#file://}" /boot/config/plugins/xtheme.plg 2>/dev/null || true
+    ;;
+  http://*|https://*)
+    wget -q -O /boot/config/plugins/xtheme.plg "$plugin_url" 2>/dev/null || true
+    ;;
+esac
+rm -f /boot/config/plugins-error/xtheme.plg
 mkdir -p /boot/config/plugins/xtheme/backgrounds
 if [ ! -f /boot/config/plugins/xtheme/xtheme.cfg ]; then
   cp -f /usr/local/emhttp/plugins/xtheme/default.cfg /boot/config/plugins/xtheme/xtheme.cfg
