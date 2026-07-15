@@ -49,6 +49,7 @@ function Write-PluginFile {
         [string]$PackageTargetName,
         [string]$VersionValue,
         [string]$Md5Value,
+        [string]$DownloadMd5Value,
         [switch]$DecodeBase64Package
     )
 
@@ -66,15 +67,33 @@ function Write-PluginFile {
 
     if ($DecodeBase64Package) {
         $packageFileBlock = @'
-<FILE Name="/boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__">
-<__SOURCE_TAG__>__SOURCE_VALUE__</__SOURCE_TAG__>
-<MD5>&md5;</MD5>
-</FILE>
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-base64 -d /boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__ > /boot/config/plugins/__PLUGIN_NAME__/packages/__PLUGIN_NAME__-__VERSION__-x86_64-1.txz
-upgradepkg --reinstall --install-new /boot/config/plugins/__PLUGIN_NAME__/packages/__PLUGIN_NAME__-__VERSION__-x86_64-1.txz
-rm -f /boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__
+set -e
+pkg_dir="/boot/config/plugins/__PLUGIN_NAME__/packages"
+pkg="$pkg_dir/__PLUGIN_NAME__-__VERSION__-x86_64-1.txz"
+pkg_b64="$pkg_dir/__PACKAGE_TARGET_NAME__"
+pkg_md5="__MD5__"
+pkg_b64_md5="__DOWNLOAD_MD5__"
+pkg_url="__SOURCE_VALUE__"
+mkdir -p "$pkg_dir"
+if [ ! -s "$pkg" ] || [ "$(md5sum "$pkg" 2>/dev/null | awk '{print $1}')" != "$pkg_md5" ]; then
+  rm -f "$pkg" "$pkg_b64"
+  wget -q -O "$pkg_b64" "$pkg_url"
+  if [ "$(md5sum "$pkg_b64" | awk '{print $1}')" != "$pkg_b64_md5" ]; then
+    echo "XTheme package download checksum mismatch"
+    rm -f "$pkg_b64"
+    exit 1
+  fi
+  base64 -d "$pkg_b64" > "$pkg"
+  rm -f "$pkg_b64"
+fi
+if [ "$(md5sum "$pkg" | awk '{print $1}')" != "$pkg_md5" ]; then
+  echo "XTheme cached package checksum mismatch"
+  rm -f "$pkg"
+  exit 1
+fi
+upgradepkg --reinstall --install-new "$pkg"
 ]]></INLINE>
 </FILE>
 '@
@@ -97,7 +116,7 @@ rm -f /boot/config/plugins/__PLUGIN_NAME__/packages/__PACKAGE_TARGET_NAME__
 <FILE Run="/bin/bash">
 <INLINE>
 mkdir -p /boot/config/plugins/__PLUGIN_NAME__/packages
-rm -f $(ls /boot/config/plugins/__PLUGIN_NAME__/__PLUGIN_NAME__*.txz 2&gt;/dev/null | grep -v '__VERSION__')
+find /boot/config/plugins/__PLUGIN_NAME__/packages -maxdepth 1 -type f -name '__PLUGIN_NAME__-*.txz*' ! -name '__PLUGIN_NAME__-__VERSION__-x86_64-1.txz' ! -name '__PLUGIN_NAME__-__VERSION__-x86_64-1.txz.b64' -delete 2&gt;/dev/null || true
 </INLINE>
 </FILE>
 __PACKAGE_FILE_BLOCK__
@@ -138,8 +157,10 @@ rm -rf /boot/config/plugins/xtheme
     $packageFileBlock = $packageFileBlock.Replace('__PACKAGE_TARGET_NAME__', $PackageTargetName)
     $packageFileBlock = $packageFileBlock.Replace('__PLUGIN_NAME__', $pluginName)
     $packageFileBlock = $packageFileBlock.Replace('__VERSION__', $VersionValue)
+    $packageFileBlock = $packageFileBlock.Replace('__MD5__', $Md5Value)
     $packageFileBlock = $packageFileBlock.Replace('__SOURCE_TAG__', $SourceTag)
     $packageFileBlock = $packageFileBlock.Replace('__SOURCE_VALUE__', $SourceValue)
+    $packageFileBlock = $packageFileBlock.Replace('__DOWNLOAD_MD5__', $DownloadMd5Value)
 
     $xml = $xml.Replace('__PLUGIN_NAME__', $pluginName)
     $xml = $xml.Replace('__AUTHOR_NAME__', $authorName)
@@ -214,7 +235,8 @@ if ($PluginRepo) {
         -SourceValue $packageUrl `
         -PackageTargetName $releasePackageTextName `
         -VersionValue $Version `
-        -Md5Value $releaseMd5 `
+        -Md5Value $md5 `
+        -DownloadMd5Value $releaseMd5 `
         -DecodeBase64Package
     Copy-Item $releasePluginPath $rootPluginPath -Force
 }

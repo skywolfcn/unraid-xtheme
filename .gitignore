@@ -4,7 +4,10 @@ ref-*/
 # Temporary release copies
 dist/release/
 
+# Project-local scratch/output directories
+.temp/
+out/
+
 # OS/editor noise
 Thumbs.db
 .DS_Store
-
