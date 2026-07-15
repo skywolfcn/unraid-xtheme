@@ -225,11 +225,12 @@ if ($PluginRepo) {
     [IO.File]::WriteAllText($releasePackageTextPath, $releasePackageText, [Text.Encoding]::ASCII)
     $releaseMd5 = (Get-FileHash -Algorithm MD5 -Path $releasePackageTextPath).Hash.ToLower()
     $releasePluginPath = Join-Path $distReleaseDir "$pluginName.plg"
-    $baseRawUrl = "https://raw.githubusercontent.com/$PluginRepo/$Branch"
-    $packageUrl = "$baseRawUrl/archive/$releasePackageTextName"
+    $releaseDownloadUrl = "https://github.com/$PluginRepo/releases/download/v$Version"
+    $latestPluginUrl = "https://github.com/$PluginRepo/releases/latest/download/$pluginName.plg"
+    $packageUrl = "$releaseDownloadUrl/$releasePackageTextName"
     Write-PluginFile `
         -Destination $releasePluginPath `
-        -PluginUrl "$baseRawUrl/$pluginName.plg" `
+        -PluginUrl $latestPluginUrl `
         -SupportUrl "https://github.com/$PluginRepo" `
         -SourceTag 'URL' `
         -SourceValue $packageUrl `

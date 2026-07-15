@@ -2,30 +2,30 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "xtheme">
 <!ENTITY author "skywolf">
-<!ENTITY version "2026.07.15.1">
-<!ENTITY md5 "c7dd56dcbf4d1712e4264436775b5ddc">
-<!ENTITY pluginURL "https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg">
+<!ENTITY version "2026.07.15.2">
+<!ENTITY md5 "6ca03ae8f03a692536c32f1428c010f9">
+<!ENTITY pluginURL "https://github.com/skywolfcn/unraid-xtheme/releases/latest/download/xtheme.plg">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" pluginURL="&pluginURL;" icon="paint-brush" min="7.2.0" launch="Settings/XTheme" support="https://github.com/skywolfcn/unraid-xtheme">
 <CHANGES>
-###2026.07.15.1
+###2026.07.15.2
 - Initial release of a simplified glass theme plugin for Unraid 7.2.x
 </CHANGES>
 <FILE Run="/bin/bash">
 <INLINE>
 mkdir -p /boot/config/plugins/xtheme/packages
-find /boot/config/plugins/xtheme/packages -maxdepth 1 -type f -name 'xtheme-*.txz*' ! -name 'xtheme-2026.07.15.1-x86_64-1.txz' ! -name 'xtheme-2026.07.15.1-x86_64-1.txz.b64' -delete 2&gt;/dev/null || true
+find /boot/config/plugins/xtheme/packages -maxdepth 1 -type f -name 'xtheme-*.txz*' ! -name 'xtheme-2026.07.15.2-x86_64-1.txz' ! -name 'xtheme-2026.07.15.2-x86_64-1.txz.b64' -delete 2&gt;/dev/null || true
 </INLINE>
 </FILE>
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
 set -e
 pkg_dir="/boot/config/plugins/xtheme/packages"
-pkg="$pkg_dir/xtheme-2026.07.15.1-x86_64-1.txz"
-pkg_b64="$pkg_dir/xtheme-2026.07.15.1-x86_64-1.txz.b64"
-pkg_md5="c7dd56dcbf4d1712e4264436775b5ddc"
-pkg_b64_md5="479769676802eaad8470df10885ca43e"
-pkg_url="https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/archive/xtheme-2026.07.15.1-x86_64-1.txz.b64"
+pkg="$pkg_dir/xtheme-2026.07.15.2-x86_64-1.txz"
+pkg_b64="$pkg_dir/xtheme-2026.07.15.2-x86_64-1.txz.b64"
+pkg_md5="6ca03ae8f03a692536c32f1428c010f9"
+pkg_b64_md5="6abcdbd09b728458627d13ab5ceb0216"
+pkg_url="https://github.com/skywolfcn/unraid-xtheme/releases/download/v2026.07.15.2/xtheme-2026.07.15.2-x86_64-1.txz.b64"
 mkdir -p "$pkg_dir"
 if [ ! -s "$pkg" ] || [ "$(md5sum "$pkg" 2>/dev/null | awk '{print $1}')" != "$pkg_md5" ]; then
   rm -f "$pkg" "$pkg_b64"
@@ -48,7 +48,7 @@ upgradepkg --reinstall --install-new "$pkg"
 </FILE>
 <FILE Run="/bin/bash">
 <INLINE><![CDATA[
-plugin_url="https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg"
+plugin_url="https://github.com/skywolfcn/unraid-xtheme/releases/latest/download/xtheme.plg"
 case "$plugin_url" in
   file://*)
     cp -f "${plugin_url#file://}" /boot/config/plugins/xtheme.plg 2>/dev/null || true
@@ -71,7 +71,7 @@ php /usr/local/emhttp/plugins/xtheme/scripts/refresh_login_theme.php >/dev/null 
 <FILE Run="/bin/bash" Method="remove">
 <INLINE><![CDATA[
 php /usr/local/emhttp/plugins/xtheme/scripts/login_hook_patch.php remove >/dev/null 2>&1 || true
-removepkg xtheme-2026.07.15.1-x86_64-1 2>/dev/null
+removepkg xtheme-2026.07.15.2-x86_64-1 2>/dev/null
 rm -f /boot/config/plugins/xtheme.plg
 rm -rf /usr/local/emhttp/plugins/xtheme
 rm -rf /boot/config/plugins/xtheme

@@ -66,7 +66,7 @@ plugin install /boot/config/plugins/xtheme/xtheme.plg
 Install URL:
 
 ```text
-https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg
+https://github.com/skywolfcn/unraid-xtheme/releases/latest/download/xtheme.plg
 ```
 
 Release workflow:
@@ -80,16 +80,16 @@ Release workflow:
 2. Commit and push:
    - `archive/xtheme-<version>-x86_64-1.txz.b64`
    - `xtheme.plg`
-3. Users install from the raw URL above.
+3. Users install from the release URL above.
 4. For later updates, bump the version, rebuild, and push the new `xtheme.plg` plus matching `archive/*.txz.b64`.
 
 ## Updates in Unraid
 
-Yes. If users install `XTheme` from the GitHub raw `.plg` URL, Unraid can detect later plugin updates.
+Yes. If users install `XTheme` from the GitHub release `.plg` URL, Unraid can detect later plugin updates.
 
 For updates to appear correctly:
 
-- keep the install URL the same: `https://raw.githubusercontent.com/skywolfcn/unraid-xtheme/main/xtheme.plg`
+- keep the install URL the same: `https://github.com/skywolfcn/unraid-xtheme/releases/latest/download/xtheme.plg`
 - increase the plugin version every time
 - push the updated `xtheme.plg`
 - push the matching package file in `archive/`
